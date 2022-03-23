@@ -1,0 +1,10 @@
+{
+    "groups": {
+        "NET_BCN-PUBLIC": "true",
+        "NET_HKG-PUBLIC": "true",
+        "NET_MRS-PUBLIC": "true",
+        "NET_NYC-PUBLIC": "true",
+        "NET_PRS-PUBLIC": "true",
+        "IP_NOMIOS": "true"
+    }
+}
