@@ -22,3 +22,4 @@ import threading
 import subprocess
 from telnetlib import telnet
 import hashlib
+from pyfiglet import figlet_format
