@@ -1,8 +1,10 @@
+## import modules ##
 import sys
 import hashlib
 
 sha1 = hashlib.sha1()
 
+## compare sha1 of files ##
 def compare_hash(template, output):
     with open(template, 'rb') as f:
         sha1.update(f.read())

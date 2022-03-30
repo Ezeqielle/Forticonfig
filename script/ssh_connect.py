@@ -33,3 +33,7 @@ def read_cred():
         cred = f.read()
     cred = cred.split("\n")
     return cred
+
+## send command and get return ##
+
+## parsing command output ##

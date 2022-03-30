@@ -1,3 +1,4 @@
+## compare files content ##
 def compare_file(template, output):
     i = 0
 
