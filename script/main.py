@@ -23,6 +23,7 @@ import compare_hash
 import compare_file
 import ssh_connect
 import create_dir
+import create_rapport
 
 ## for color work on windows ##
 import colorama
@@ -86,10 +87,10 @@ for x in range(len(templateFile)):
             templateHash = compare_hash.compare_hash(templateFile[x], outputFile[y])
             if templateHash == True:
                 print(colored("\n[+] Starting compare the hash of forti output with template", "cyan"))
-                print(colored(f"[+] File are the same for {outputName}\n", "green"))
+                print(colored(f"[+] File are the same for {outputName}", "green"))
             else:
                 print(colored("\n[+] Starting compare of forti output with template", "cyan"))
-                print(colored(f"[-] File are different for {outputName}\n", "red"))
+                print(colored(f"[-] File are different for {outputName}", "red"))
                 ## start compare output of forti with template line by line ##
                 lineArray, templateArray, outputArray = compare_file.compare_file(templateFile[x], outputFile[y])
                 size = len(lineArray)
@@ -97,8 +98,8 @@ for x in range(len(templateFile)):
                 print(colored(f"[+] Starting compare files for {outputName}", "cyan"))
                 for i in range(size):
                     if outputName == "groups":
-                        template = str(templateArray[i]).replace(" ", "")
-                        output = str(outputArray[i]).replace(" ", "")
+                        template = str(templateArray[i]).replace(" ", "").replace(",", "")
+                        output = str(outputArray[i]).replace(" ", "").replace(",", "")
                         print(f"Line {lineArray[i]}:")
                         print("\tTemplate:", template, end="\n")
                         print("\tOutput", "\t:" , output, end="\n")
@@ -112,3 +113,6 @@ for x in range(len(templateFile)):
 ## export all output in a pdf ##
 print("\n")
 print(colored("[+] Starting export all output in a pdf", "cyan"))
+generateRapport = create_rapport.generate_rapport(outputFolder.name)
+print(colored(f"[+] Rapport exported in {generateRapport}/{outputFolder.name}.pdf", "green"))
+print("\n")
