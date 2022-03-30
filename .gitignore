@@ -1,3 +1,4 @@
 config/*.key
 config/*.cfg
 __pycache__
+*-sample.pdf
