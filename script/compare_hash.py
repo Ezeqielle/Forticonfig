@@ -1,5 +1,4 @@
 ## import modules ##
-import sys
 import hashlib
 
 sha1 = hashlib.sha1()
@@ -18,4 +17,6 @@ def compare_hash(template, output):
     if templateHash == outputHash:
         return True
     else:
+        print(f'template {templateHash}')
+        print(f'output {outputHash}')
         return False

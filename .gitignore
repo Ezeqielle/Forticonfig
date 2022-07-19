@@ -1,4 +1,7 @@
 config/*.key
 config/*.cfg
 __pycache__
-*-sample.pdf
+*.txt
+$.pdf
+notes/
+*.sh

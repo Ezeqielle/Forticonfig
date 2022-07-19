@@ -11,19 +11,23 @@
 
 # Devloppers: Ezeqielle
 # Description: This script is a simple script that will be used to check fortigate configuration and compare it with the configuration template.
-# version: 0.1
+# version: 1.7
 
 ## import modules ##
+from doctest import REPORT_CDIFF
 from pyfiglet import figlet_format
 from termcolor import colored
 from pathlib import Path
 
 ## import my funcion ##
-import compare_hash
+#import compare_hash
 import compare_file
 import ssh_connect
 import create_dir
 import create_rapport
+import encode_cred
+import get_output
+from create_rapport import PDF
 
 ## for color work on windows ##
 import colorama
@@ -37,82 +41,105 @@ print(figlet_format("Forti Config", font="big"))
 print(colored("[+] Creating a dir for export", "cyan"))
 folder = create_dir.create_dir()
 print(colored("[+] Dir created", "green"))
-print(colored("\tDir path: " + str(folder), "green"))
+print(f'\t{str(folder)}')
+repportFolder = path = Path(__file__).parent.parent.resolve() / 'output' / folder.name
 
-## test ssh connection ##
-#print(colored("[+] Starting ssh connection", "cyan"))
-#user = ssh_connect.read_cred()[0].split(":")[0]
-#password = ssh_connect.read_cred()[0].split(":")[1]
-#hostDict = {}
-#for i in range(len(ssh_connect.read_ip())):
-#    for x in range(len(ssh_connect.read_port())):
-#        attemptSsh = ssh_connect.ssh_check(ssh_connect.read_ip()[i], user, password, ssh_connect.read_port()[x])
-#        if attemptSsh == True:
-#            print(colored(f"[+] Connected on {ssh_connect.read_ip()[i]} with port {ssh_connect.read_port()[x]}", "green"))
-#            hostDict[ssh_connect.read_ip()[i]] = ssh_connect.read_port()[x]
-#            break 
-#        else:
-#            print(colored(f"[-] Connection on {ssh_connect.read_ip()[i]} with port {ssh_connect.read_port()[x]} impossible", "red"))
-#            print(colored(f"\tError: {attemptSsh}", "red"))
-#print(f"{hostDict}")
-
-## start ssh connection ##
-
-## get data to feed output file ##
-
-## get all template and output ##
+## get all template ##
 print("\n")
-print(colored("[+] Get all template and output files", "cyan"))
-
-## get all template and output ##
+print(colored("[+] Load all template", "cyan"))
 templateFolder = path = Path(__file__).parent.parent.resolve() / 'template'
 templateFile = [x for x in templateFolder.iterdir() if x.is_file()]
 for x in range(len(templateFile)):
-    print(templateFile[x])
+    print(f'\t{templateFile[x]}')
 
-#outputFolder = path = Path(__file__).parent.parent.resolve() / 'output' / folder.name
-outputFolder = path = Path(__file__).parent.parent.resolve() / 'output' / "29032022_79101"
-outputFile = [x for x in outputFolder.iterdir() if x.is_file()]
-for x in range(len(outputFile)):
-    print(outputFile[x])
+## test ssh connection ##
+print('\n')
+print(colored("[+] Starting ssh connection", "cyan"))
+user = encode_cred.use_cred()[0]
+password = encode_cred.use_cred()[1]
+hostDict = {}
+for i in range(len(ssh_connect.read_ip())):
+    for x in range(len(ssh_connect.read_port())):
+        attemptSsh = ssh_connect.ssh_check(ssh_connect.read_ip()[i], user, password, ssh_connect.read_port()[x])
+        if attemptSsh == True:
+            print(colored(f"[+] Connected on {ssh_connect.read_ip()[i]} with port {ssh_connect.read_port()[x]}", "green"))
+            hostDict[ssh_connect.read_ip()[i]] = ssh_connect.read_port()[x]
+            break 
+        else:
+            print(colored(f"[-] Connection on {ssh_connect.read_ip()[i]} with port {ssh_connect.read_port()[x]} impossible", "red"))
+            print(colored(f"\tError: {attemptSsh}", "red"))
 
-## compare hash of template and output ##
-for x in range(len(templateFile)):
-    templateName = templateFile[x].name
-    templateName = templateName.split("_")[0]
-    for y in range(len(outputFile)):
-        outputName = outputFile[y].name
-        outputName = outputName.split("_")[0]
-        if templateName == outputName:
-            templateHash = compare_hash.compare_hash(templateFile[x], outputFile[y])
-            if templateHash == True:
-                print(colored("\n[+] Starting compare the hash of forti output with template", "cyan"))
-                print(colored(f"[+] File are the same for {outputName}", "green"))
-            else:
-                print(colored("\n[+] Starting compare of forti output with template", "cyan"))
-                print(colored(f"[-] File are different for {outputName}", "red"))
-                ## start compare output of forti with template line by line ##
-                lineArray, templateArray, outputArray = compare_file.compare_file(templateFile[x], outputFile[y])
+## init repport creation ##
+pdf = PDF()
+title = repportFolder.name
+pdf.set_title(title)
+create_rapport.get_title(title)
+
+## start ssh connection ##
+## get data to feed output file ##
+for host, port in hostDict.items():
+    pdf.new_page()
+    pdf.chapter_title(str(host), str(port))
+    create_dir.create_host_dir(repportFolder, host)
+    ssh_connect.ssh_filtrage(host, user, password, port, repportFolder)
+    ssh_connect.ssh_groups(host, user, password, port, repportFolder)
+    ssh_connect.ssh_obj(host, user, password, port, repportFolder)
+    usb = ssh_connect.get_usb_devices(host, user, password, port)
+    ## get all output for host ##
+    outputFolderContent = get_output.output_file(repportFolder, host)
+    ssh_connect.get_public_ip(host, user, password, port, repportFolder)
+    ## start compare output of forti with template line by line ##
+    print("\n")
+    print(colored(f"[§] Start comparing files for {host}", "yellow"))
+    for x in range(len(templateFile)):
+        templateName = templateFile[x].name
+        templateName = templateName.split("_")[0]
+        for y in range(len(outputFolderContent)):
+            outputName = outputFolderContent[y].name
+            outputName = outputName.split("_")[0]
+            if templateName == outputName:
+                lineArray, templateArray, outputArray, nbline = compare_file.compare_file(templateFile[x], outputFolderContent[y])
                 size = len(lineArray)
-                #print(outputArray)
                 print(colored(f"[+] Starting compare files for {outputName}", "cyan"))
-                for i in range(size):
-                    if outputName == "groups":
-                        template = str(templateArray[i]).replace(" ", "").replace(",", "")
-                        output = str(outputArray[i]).replace(" ", "").replace(",", "")
-                        print(f"Line {lineArray[i]}:")
-                        print("\tTemplate:", template, end="\n")
-                        print("\tOutput", "\t:" , output, end="\n")
-                    else:
-                        template = str(templateArray[i]).split("[")[1].split("]")[0]
-                        output = str(outputArray[i]).split("[")[1].split("]")[0]
-                        print(f"Line {lineArray[i]}:")
-                        print("\tTemplate:", template, end="\n")
-                        print("\tOutput", "\t:" , output, end="\n")
+                if not lineArray and nbline == True:
+                    conform = f'[+] The {templateName} configuration is conform'
+                    print(colored('[+] The configuration is conform', 'green'))
+                    pdf.chapter_body(str(conform))
+                else:
+                    print(colored('[-] Configuration not conform', 'red'))
+                    notConform = f'[+] The {templateName} configuration is not conform'
+                    pdf.chapter_body(notConform)
+                    for i in range(size):
+                        if outputName == "groups":
+                            template = str(templateArray[i]).replace(" ", "").replace(",", "")
+                            output = str(outputArray[i]).replace(" ", "").replace(",", "")
+                            print(f"Line {lineArray[i]}:")
+                            print("\tTemplate:", template, end="\n")
+                            print("\tOutput", "\t:" , output, end="\n")
+                            lineOutput = f'Line {lineArray[i]}:'
+                            pdf.chapter_body(str(lineOutput))
+                            pdf.chapter_body(str(templateArray[i]))
+                            pdf.chapter_body(str(outputArray[i]))
+                        else:
+                            print(f"Line {lineArray[i]}:")
+                            print("\tTemplate:", templateArray[i], end="\n")
+                            print("\tOutput", "\t:" , outputArray[i], end="\n")
+                            lineOutput = f'Line {lineArray[i]}:'
+                            pdf.chapter_body(str(lineOutput))
+                            pdf.chapter_body(str(templateArray[i]))
+                            pdf.chapter_body(str(outputArray[i]))
+    if usb == True:
+        print(colored('[+] no usb key detected','magenta'))
+        pdf.chapter_body('[+] no usb key detected')
+    else:
+        print(colored('[!!] usb key detected please check manually', 'red'))
+        pdf.chapter_usb('[!!] usb key detected please check manually')
 
 ## export all output in a pdf ##
 print("\n")
+rapportFolder = path = Path(__file__).parent.parent.resolve() / 'rapports'
 print(colored("[+] Starting export all output in a pdf", "cyan"))
-generateRapport = create_rapport.generate_rapport(outputFolder.name)
-print(colored(f"[+] Rapport exported in {generateRapport}/{outputFolder.name}.pdf", "green"))
+generateRapport = pdf.output(f"{rapportFolder}/{repportFolder.name}.pdf", 'F')
+print(colored(f"[+] Rapport exported", "green"))
+print(f"\t{rapportFolder}\{repportFolder.name}.pdf")
 print("\n")

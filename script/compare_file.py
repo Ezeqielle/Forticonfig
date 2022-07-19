@@ -1,7 +1,7 @@
 ## compare files content ##
 def compare_file(template, output):
     i = 0
-
+    
     templateArray = []
     lineArray = []
     outputArray = []
@@ -17,6 +17,13 @@ def compare_file(template, output):
                 templateArray.append(line1)
                 outputArray.append(line2)
             break
-    return lineArray, templateArray, outputArray
+
+    temp = templateFile.readlines()
+    out = outputFile.readlines()
+    if len(temp) == len(out):
+        nbline = True
+    else:
+        nbline = False
+    return lineArray, templateArray, outputArray, nbline
     templateFile.close()
     outputFile.close()

@@ -19,3 +19,10 @@ def create_dir():
     if check_dir(folder) == False:
         os.mkdir(folder)
     return folder
+
+def create_host_dir(repport, host):
+    path = Path(__file__).parent.parent.resolve()
+    folder = path / 'output' / repport / host
+    if check_dir(folder) == False:
+        os.mkdir(folder)
+    return folder
